@@ -7,9 +7,86 @@ connection = mysql.connector.connect(
         password = '123',
         database='bisup'
 )
-mycursor = connection.cursor()
+mycursor = connection.cursor(buffered=True)
 
 app = Flask(__name__)
+
+
+@app.route('/usersinteam', methods=['POST'])
+def usersinteam():
+    raw_data = request.form['users_id']
+    ids = raw_data.split(',')
+    all=[]
+    for id in ids:
+        mycursor.execute(f'SELECT * FROM users WHERE id = {id}')
+        acc = mycursor.fetchall()
+        all.append(acc)
+    ok = {'all': all}
+
+    response = make_response(ok, 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+@app.route('/deluser', methods=['POST'])
+def deluser():
+    user_id = request.form['userid']
+    team_id = request.form['teamid']
+    mycursor.execute('SELECT users_id FROM teams WHERE team_name = %s', (team_id,))
+    raw_users_id = mycursor.fetchone()
+    users_id = raw_users_id[0].split(',')
+    users_id.remove(user_id)
+    ids = ','.join(users_id)
+
+    mycursor.execute('UPDATE teams SET users_id = %s WHERE team_name = %s', (ids, team_id))
+    connection.commit()
+
+    response = make_response('ok',200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+@app.route('/testteam', methods=['POST'])
+def testteam():
+    id = str(request.form['id'])
+    mycursor.execute('SELECT team_name FROM teams WHERE captain = %s', (id,))
+    user = mycursor.fetchone()
+    print(user)
+    response = make_response({'arg':user},200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+
+@app.route('/deluserfromchampionat', methods=['POST'])
+def deluserfromchampionat():
+    user_id = request.form['userid']
+    championat_id = request.form['championatid']
+
+    mycursor.execute('SELECT users_id FROM championats WHERE id = %s', (championat_id,))
+    raw_users_id = mycursor.fetchone()
+    users_id = raw_users_id[0].split(',')
+    users_id.remove(user_id)
+    ids = ','.join(users_id)
+
+    mycursor.execute('UPDATE championats SET users_id = %s WHERE id = %s', (ids, championat_id))
+    connection.commit()
+
+    response = make_response(200, 'ok')
+    return response
+
+    #
+# @app.route('/maxteam', methods=['POST'])
+# def maxteam():
+#     name_team = request.form['name_team']
+#
+#     mycursor.execute('SELECT users_id FROM teams WHERE team_name = %s', (name_team,))
+#     raw_team = mycursor.fetchone()
+#     team = raw_team[0].split(',')
+#
+#     if len(team) == 5:
+#         response = make_response('ooppss...', 200)
+#         return response
+#     else:
+#         response = make_response('ok', 200)
+#         return response
 
 
 @app.route('/allusers',methods= ['POST'])
@@ -18,11 +95,15 @@ def allusers():
     mycursor.execute('SELECT * FROM users')
     account = mycursor.fetchall()
     acc = {'all': account}
-    print(acc)
     response = make_response(acc, 200)
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
+@app.route('/server',methods= ['POST'])
+def server():
+    response = make_response('all work', 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
 
 @app.route('/championats',methods= ['POST'])
@@ -30,7 +111,6 @@ def championats():
     status = 'ok'
     mycursor.execute('SELECT * FROM championats')
     championats_name = mycursor.fetchall()
-    print(championats_name)
     acc = {'all': championats_name}
     response = make_response(acc, 200)
     response.headers['Access-Control-Allow-Origin'] = '*'
@@ -41,17 +121,16 @@ def championats():
 def addteamUser():
     user_id = request.form['id']
     championat_id = request.form['championat_id']
-    print(championat_id)
-    print(user_id)
     mycursor.execute('SELECT users_id FROM championats where id = %s', (championat_id,))
     users_id = mycursor.fetchone()
-    print(user_id)
     users = list(users_id)
-    print(users)
     users1 = users[0] + ',' + str(user_id)
-    print(users1)
     mycursor.execute('UPDATE championats SET Users_id = %s WHERE (id = %s);', (users1, championat_id))
-    response = make_response('users1', 200)
+    connection.commit()
+    mycursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))
+    user = mycursor.fetchone()
+    info = {'all': user}
+    response = make_response(info, 200)
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
@@ -60,22 +139,12 @@ def addteamUser():
 def chmore():
     status = 'ok'
     passw = request.form['passw']
-    passw1 = request.form['passw1']
     passw2 = request.form['passw2']
     id = request.form['id']
-    print(passw)
-    print(passw1)
-    print(passw2)
-    print(id)
-    if passw1 == passw2:
-        mycursor.execute("UPDATE users SET password = %s WHERE id = %s and password = %s",(passw2,id,passw))
-        response = make_response('otl', 200)
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        return response
-    else:
-        response = make_response('no otl', 200)
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        return response
+    mycursor.execute("UPDATE users SET password = %s WHERE id = %s and password = %s",(passw2,id,passw))
+    response = make_response('otl', 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
 
 @app.route('/chengedata',methods= ['POST'])
@@ -88,7 +157,8 @@ def chmore1():
     city = request.form['city']
     mycursor.execute("UPDATE users SET FIO = %s WHERE id = %s and login = %s",(fio, id, login ))
     mycursor.execute("UPDATE users SET city = %s WHERE id = %s and login = %s",(city, id, login ))
-    mycursor.execute("UPDATE users SET birthday = %s WHERE id = %s and login = %s",(dataof, id, login ))
+    mycursor.execute("UPDATE users SET date_of_birth = %s WHERE id = %s and login = %s",(dataof, id, login ))
+    # connection.commit()
     response = make_response('accounts', 200)
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
@@ -99,6 +169,18 @@ def teams():
     status = 'ok'
     id = request.form['id']
     mycursor.execute('SELECT * FROM teams where id = %s',(id,))
+    teams = mycursor.fetchall()
+    acc = {'all': teams}
+    response = make_response(acc, 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+
+@app.route('/teamsall',methods= ['POST'])
+def teamsall():
+    status = 'ok'
+    championat_id = request.form['championat_id']
+    mycursor.execute('SELECT * FROM teams where championat_id = %s',(championat_id,))
     teams = mycursor.fetchall()
     acc = {'all': teams}
     response = make_response(acc, 200)
@@ -122,7 +204,6 @@ def invate():
     mycursor.execute('SELECT * FROM invitation where nameuser = %s',(user_id,))
     info = mycursor.fetchall()
     infoacc = {'inform': info,}
-    # print(acc.all)
     response = make_response(infoacc, 200)
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
@@ -152,6 +233,34 @@ def invatetoadd():
             return response
 
 
+# @app.route('/AddToTeam', methods= ['POST'])
+# def AddToTeam():
+#     team_name = request.form['team_name']
+#     team_nomination = request.form['team_nomination']
+#     team_discribtion = request.form['team_discribtion']
+#     championat_id = request.form['championat_id']
+#     captain_id = request.form['captain_id']
+#     if team_name == '' or team_nomination == '' or team_discribtion == '' or championat_id == '' or captain_id == '':
+#         response = make_response('nuul inp', 200)
+#         response.headers['Access-Control-Allow-Origin'] = '*'
+#         return response
+#     else:
+#         mycursor.execute('INSERT INTO teams (team_name, users_id, team_describtion, championat_id, captain) values(%s, %s, %s , %s, %s)', (team_name, captain_id, team_discribtion,championat_id, captain_id))
+#         connection.commit()
+#         mycursor.execute("Select id from teams where team_name = %s",(team_name,))
+#         team_id = mycursor.fetchone()
+#         team_elem = team_id[0]
+#         mycursor.execute('SELECT teams_id FROM championats where id = %s', (championat_id,))
+#         teams_id = mycursor.fetchone()
+#         teams = list(teams_id)
+#         teams1 = teams[0] + ',' + str(team_elem)
+#         # teams1 = teams[0] + ',' + str(team_id)
+#         tuple(teams1)
+#         mycursor.execute('UPDATE championats SET teams_id = %s WHERE id = %s', (teams1, championat_id))
+#         response = make_response('teams1', 200)
+#         response.headers['Access-Control-Allow-Origin'] = '*'
+#         return response
+
 @app.route('/AddToTeam', methods= ['POST'])
 def AddToTeam():
     team_name = request.form['team_name']
@@ -159,24 +268,33 @@ def AddToTeam():
     team_discribtion = request.form['team_discribtion']
     championat_id = request.form['championat_id']
     captain_id = request.form['captain_id']
-    if team_name == '' or team_nomination == '' or team_discribtion == '' or championat_id == '' or captain_id == '':
-        response = make_response('nuul inp', 200)
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        return response
+    print(team_name)
+
+    mycursor.execute("SELECT team_name FROM teams WHERE team_name = %s", (team_name,))
+    acc = mycursor.fetchone()
+    print(acc)
+    if acc == None:
+        if team_name == '' or team_nomination == '' or team_discribtion == '' or championat_id == '' or captain_id ==   '':
+            response = make_response('nuul inp', 200)
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
+        else:
+            mycursor.execute('INSERT INTO teams (team_name, users_id,championat_id, team_describtion, captain) values(%s,%s, %s, %s, %s)', (team_name, captain_id, championat_id, team_discribtion, captain_id))
+            connection.commit()
+            mycursor.execute("Select id from teams where team_name = %s",(team_name,))
+            team_id = mycursor.fetchone()
+            team_elem = team_id[0]
+            mycursor.execute('SELECT teams_id FROM championats where id = %s', (championat_id,))
+            teams_id = mycursor.fetchone()
+            teams = list(teams_id)
+            teams1 = teams[0] + ',' + str(team_elem)
+            tuple(teams1)
+            mycursor.execute('UPDATE championats SET teams_id = %s WHERE id = %s', (teams1, championat_id))
+            response = make_response('teams1', 200)
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
     else:
-        mycursor.execute('INSERT INTO teams (team_name, users_id, team_describtion, captain) values(%s, %s, %s, %s)', (team_name, captain_id, team_discribtion, captain_id))
-        connection.commit()
-        mycursor.execute("Select id from teams where team_name = %s",(team_name,))
-        team_id = mycursor.fetchone()
-        team_elem = team_id[0]
-        mycursor.execute('SELECT teams_id FROM championats where id = %s', (championat_id,))
-        teams_id = mycursor.fetchone()
-        teams = list(teams_id)
-        teams1 = teams[0] + ',' + str(team_elem)
-        # teams1 = teams[0] + ',' + str(team_id)
-        tuple(teams1)
-        mycursor.execute('UPDATE championats SET teams_id = %s WHERE id = %s', (teams1, championat_id))
-        response = make_response('teams1', 200)
+        response = make_response("team name is busy", 200)
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
 
@@ -214,8 +332,17 @@ def user():
     mycursor.execute('SELECT * FROM users where id = %s',(user_id,))
     users = mycursor.fetchall()
     acc = {'all': users,}
-    print(acc)
     response = make_response(acc, 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+@app.route('/testin', methods=['POST'])
+def testin():
+    user = request.form['user']
+    mycursor.execute('SELECT team_name FROM teams where captain = %s',(user,))
+    users = mycursor.fetchall()
+    list = {'list': users,}
+    response = make_response(list, 200)
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
@@ -223,15 +350,12 @@ def user():
 def login():
     login = request.form['login']
     password = request.form['password']
-    print(login)
     mycursor.execute('SELECT * FROM users WHERE Login = %s AND Password = %s', (login, password))
     account = mycursor.fetchone()
-    print(account)
     status = 'error'
     def acc():
         if account:
             print('ok')
-            print(account[0])
         else:
             print('error password')
     acc()
@@ -244,7 +368,7 @@ def login():
 		'fio':account[4],
 		'date_of_birth':account[5],
 		'gender':account[6],
-		'sity':account[7],
+		'city':account[7],
 		'img':account[8]
         }
         status = {'info':databaseinfo, 'status': 'ok'}
@@ -252,28 +376,19 @@ def login():
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
-@app.route('/register', methods=['POST'])
+@app.route('/reg', methods=['POST'])
 def register():
     login = request.form['login']
     email = request.form['email']
-    passw = request.form['password']
-    passw1 = request.form['passw1']
-    print(login)
-    print(passw)
-    print(email)
+    password = request.form['password']
     mycursor.execute('SELECT * FROM users WHERE login=%s', (login,))
     acc = mycursor.fetchone()
     if not acc:
-        if passw != passw1:
-            response = make_response('passw incorect', 200)
-            response.headers['Access-Control-Allow-Origin'] = '*'
-            return response
-        else:
-            mycursor.execute('INSERT INTO users (login, email, password) VALUES (%s, %s, %s)', (login, email, passw))
-            connection.commit()
-            response = make_response('ok', 200)
-            response.headers['Access-Control-Allow-Origin'] = '*'
-            return response
+        mycursor.execute('INSERT INTO users (login, email, password) VALUES (%s, %s, %s)', (login, email, password))
+        connection.commit()
+        response = make_response('ok', 200)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
     else:
         response = make_response('login isssss', 200)
         response.headers['Access-Control-Allow-Origin'] = '*'
