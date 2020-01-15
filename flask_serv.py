@@ -55,38 +55,83 @@ def testteam():
     return response
 
 
-@app.route('/deluserfromchampionat', methods=['POST'])
-def deluserfromchampionat():
-    user_id = request.form['userid']
-    championat_id = request.form['championatid']
-
-    mycursor.execute('SELECT users_id FROM championats WHERE id = %s', (championat_id,))
-    raw_users_id = mycursor.fetchone()
-    users_id = raw_users_id[0].split(',')
-    users_id.remove(user_id)
-    ids = ','.join(users_id)
-
-    mycursor.execute('UPDATE championats SET users_id = %s WHERE id = %s', (ids, championat_id))
-    connection.commit()
-
-    response = make_response(200, 'ok')
-    return response
-
-    #
-# @app.route('/maxteam', methods=['POST'])
-# def maxteam():
-#     name_team = request.form['name_team']
+# @app.route('/deluserfromchampionat', methods=['POST'])
+# def deluserfromchampionat():
+#     user_id = request.form['userid']
+#     championat_id = request.form['championatid']
+#     print(user_id)
+#     #
+#     mycursor.execute('SELECT users_id FROM championats WHERE id = %s', (championat_id,))
+#     raw_users_id = mycursor.fetchone()
+#     users_id = raw_users_id[0].split(',')
+#     print(users_id)
+#     users_id.remove(user_id)
+#     print(68)
+#     ids = ','.join(users_id)
 #
-#     mycursor.execute('SELECT users_id FROM teams WHERE team_name = %s', (name_team,))
-#     raw_team = mycursor.fetchone()
-#     team = raw_team[0].split(',')
+#     mycursor.execute('UPDATE championats SET users_id = %s WHERE id = %s', (ids, championat_id))
+#     connection.commit()
 #
-#     if len(team) == 5:
-#         response = make_response('ooppss...', 200)
-#         return response
-#     else:
-#         response = make_response('ok', 200)
-#         return response
+#     response = make_response('ok',200)
+#     response.headers['Access-Control-Allow-Origin'] = '*'
+#     return response
+@app.route('/exitFromChampionat', methods=['POST'])
+def exitFromChampionat():
+    championat_id = request.form['championat_id']
+    user_id = request.form['user_id']
+    team_id = request.form['teamid']
+    print('exitFromChampionat')
+    print(user_id)
+    print(championat_id)
+    print(team_id)
+
+    mycursor.execute('SELECT captain FROM teams WHERE id = %s', (team_id,))
+    captain = mycursor.fetchone()
+    captain_id = int(captain[0])
+    print(captain_id)
+    print(captain_id)
+    if user_id == captain_id:
+        print(team_id)
+        mycursor.execute('DELETE FROM teams WHERE id = %s', (team_id,))
+        connection.commit()
+
+        mycursor.execute('SELECT teams_id FROM championats WHERE id = %s', (championat_id,))
+        raw_teams_id = mycursor.fetchone()
+        teams_id = raw_teams_id[0].splсit(',')
+        teams_id.remove(team_id)
+        teams_ids = ','.join(teams_id)
+        mycursor.execute('UPDATE championats SET teams_id = %s WHERE id = %s', (teams_ids, championat_id))
+
+
+        mycursor.execute('SELECT users_id FROM championats WHERE id = %s', (championat_id,))
+        raw_users_ids = mycursor.fetchone()
+        users_ids = raw_users_ids[0].split(',')
+        users_ids.remove(user_id)
+        users_id = ','.join(users_ids)
+        mycursor.execute('UPDATE championats SET users_id = %s WHERE id = %s', (users_id, championat_id))
+
+
+        response = make_response('участник был капитаном, поэтому и команда удалена!', 200)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+    else:
+        mycursor.execute('SELECT users_id FROM teams WHERE id = %s', (team_id,))
+        raw_users_ids = mycursor.fetchone()
+        users_ids = raw_users_ids[0].split(',')
+        users_ids.remove(user_id)
+        users_id = ','.join(users_ids)
+        mycursor.execute('UPDATE teams SET users_id = %s WHERE id = %s', (users_id, team_id))
+
+        mycursor.execute('SELECT users_id FROM championats WHERE id = %s', (championat_id,))
+        rawUsersIds = mycursor.fetchone()
+        usersIds = rawUsersIds[0].split(',')
+        usersIds.remove(user_id)
+        usersId = ','.join(usersIds)
+        mycursor.execute('UPDATE championats SET users_id = %s WHERE id = %s', (usersId, championat_id))
+
+        response = make_response('Пользователь удален из чемпионата и команды!', 200)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
 
 
 @app.route('/allusers',methods= ['POST'])
@@ -216,50 +261,29 @@ def invatetoadd():
     coverletter = request.form['coverletter']
     mycursor.execute('SELECT nameuser, nameteam FROM invitation WHERE nameteam=%s and nameuser=%s', (nameteam, nameuser))
     acc = mycursor.fetchall()
+    # mycursor.execute('SELECT captain FROM teams WHERE captain =%s', (nameteam,))
+    # captain = mycursor.fetchall()
     if nameuser == '' or nameteam == '' or nomination == '' or coverletter == '':
-        response = make_response('oops', 200)
+        response = make_response('заполенены не все поля', 200)
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     else:
         if acc:
-            response = make_response('teem is', 200)
+            response = make_response('Приглашение уже отправленно', 200)
             response.headers['Access-Control-Allow-Origin'] = '*'
             return response
         else:
+            # if captain:
+            #     response = make_response('Вы не можете отправить приглашение себе', 200)
+            #     response.headers['Access-Control-Allow-Origin'] = '*'
+            #     return response
+            # else:
             mycursor.execute('INSERT INTO invitation (nameuser, nameteam, nomination, coverletter) VALUES (%s, %s, %s, %s)', (nameuser, nameteam, nomination, coverletter))
             connection.commit()
-            response = make_response('ok', 200)
+            response = make_response('Приглашение отправленно', 200)
             response.headers['Access-Control-Allow-Origin'] = '*'
             return response
 
-
-# @app.route('/AddToTeam', methods= ['POST'])
-# def AddToTeam():
-#     team_name = request.form['team_name']
-#     team_nomination = request.form['team_nomination']
-#     team_discribtion = request.form['team_discribtion']
-#     championat_id = request.form['championat_id']
-#     captain_id = request.form['captain_id']
-#     if team_name == '' or team_nomination == '' or team_discribtion == '' or championat_id == '' or captain_id == '':
-#         response = make_response('nuul inp', 200)
-#         response.headers['Access-Control-Allow-Origin'] = '*'
-#         return response
-#     else:
-#         mycursor.execute('INSERT INTO teams (team_name, users_id, team_describtion, championat_id, captain) values(%s, %s, %s , %s, %s)', (team_name, captain_id, team_discribtion,championat_id, captain_id))
-#         connection.commit()
-#         mycursor.execute("Select id from teams where team_name = %s",(team_name,))
-#         team_id = mycursor.fetchone()
-#         team_elem = team_id[0]
-#         mycursor.execute('SELECT teams_id FROM championats where id = %s', (championat_id,))
-#         teams_id = mycursor.fetchone()
-#         teams = list(teams_id)
-#         teams1 = teams[0] + ',' + str(team_elem)
-#         # teams1 = teams[0] + ',' + str(team_id)
-#         tuple(teams1)
-#         mycursor.execute('UPDATE championats SET teams_id = %s WHERE id = %s', (teams1, championat_id))
-#         response = make_response('teams1', 200)
-#         response.headers['Access-Control-Allow-Origin'] = '*'
-#         return response
 
 @app.route('/AddToTeam', methods= ['POST'])
 def AddToTeam():
@@ -268,53 +292,123 @@ def AddToTeam():
     team_discribtion = request.form['team_discribtion']
     championat_id = request.form['championat_id']
     captain_id = request.form['captain_id']
-    print(team_name)
+    # print(team_name)
+    # print(team_nomination)
+    # print(team_discribtion)
+    # print(championat_id)
+    # print(captain_id)
 
+    # данные для проверки названия команды
     mycursor.execute("SELECT team_name FROM teams WHERE team_name = %s", (team_name,))
+    # mycursor.execute(f'SELECT team_name FROM teams WHERE team_name = {team_name}')
+
     acc = mycursor.fetchone()
     print(acc)
-    if acc == None:
-        if team_name == '' or team_nomination == '' or team_discribtion == '' or championat_id == '' or captain_id ==   '':
-            response = make_response('nuul inp', 200)
-            response.headers['Access-Control-Allow-Origin'] = '*'
-            return response
+    # данные для проверки капитана команды в чемпионате
+    mycursor.execute('SELECT captain FROM teams WHERE championat_id = %s AND captain = %s', (championat_id, captain_id))
+    acc1 = mycursor.fetchone()
+    print(acc1)
+
+    if acc1 == None:
+        if acc == None:
+            if team_name == '' or team_nomination == '' or team_discribtion == '' or championat_id == '' or captain_id ==   '':
+                response = make_response('Заполнены не все поля', 200)
+                response.headers['Access-Control-Allow-Origin'] = '*'
+                return response
+            else:
+                mycursor.execute('INSERT INTO teams (team_name, users_id,championat_id, team_describtion, captain) values(%s,%s, %s, %s, %s)', (team_name, captain_id, championat_id, team_discribtion, captain_id))
+                connection.commit()
+                mycursor.execute("SELECT id from teams where team_name = %s",(team_name,))
+                team_id = mycursor.fetchone()
+                team_elem = team_id[0]
+                mycursor.execute('SELECT teams_id FROM championats where id = %s', (championat_id,))
+                teams_id = mycursor.fetchone()
+                teams = list(teams_id)
+                teams1 = teams[0] + ',' + str(team_elem)
+                tuple(teams1)
+                mycursor.execute('UPDATE championats SET teams_id = %s WHERE id = %s', (teams1, championat_id))
+                response = make_response('Команда создана!', 200)
+                response.headers['Access-Control-Allow-Origin'] = '*'
+                return response
         else:
-            mycursor.execute('INSERT INTO teams (team_name, users_id,championat_id, team_describtion, captain) values(%s,%s, %s, %s, %s)', (team_name, captain_id, championat_id, team_discribtion, captain_id))
-            connection.commit()
-            mycursor.execute("Select id from teams where team_name = %s",(team_name,))
-            team_id = mycursor.fetchone()
-            team_elem = team_id[0]
-            mycursor.execute('SELECT teams_id FROM championats where id = %s', (championat_id,))
-            teams_id = mycursor.fetchone()
-            teams = list(teams_id)
-            teams1 = teams[0] + ',' + str(team_elem)
-            tuple(teams1)
-            mycursor.execute('UPDATE championats SET teams_id = %s WHERE id = %s', (teams1, championat_id))
-            response = make_response('teams1', 200)
+            response = make_response("Имя команды занято", 200)
             response.headers['Access-Control-Allow-Origin'] = '*'
             return response
     else:
-        response = make_response("team name is busy", 200)
+        response = make_response('Копитанам команд нельзя создавать команды', 200)
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
+
+# @app.route('/AddToTeam', methods= ['POST'])
+# def AddToTeam():
+#     team_name = request.form['team_name']
+#     team_nomination = request.form['team_nomination']
+#     team_discribtion = request.form['team_discribtion']
+#     championat_id = request.form['championat_id']
+#     captain_id = request.form['captain_id']
+#     print(team_name)
+#
+#      # данные для проверки названия команды
+#     mycursor.execute("SELECT team_name FROM teams WHERE team_name = %s", (team_name,))
+#     # mycursor.execute(f'SELECT team_name FROM teams WHERE team_name = {team_name}')
+#     acc = mycursor.fetchone()
+#     print(acc)
+#
+#     mycursor.execute("SELECT team_name FROM teams WHERE team_name = %s", (team_name,))
+#     acc = mycursor.fetchone()
+#     print(acc)
+#     if acc == None:
+#         if team_name == '' or team_nomination == '' or team_discribtion == '' or championat_id == '' or captain_id ==   '':
+#             response = make_response('nuul inp', 200)
+#             response.headers['Access-Control-Allow-Origin'] = '*'
+#             return response
+#         else:
+#             mycursor.execute('INSERT INTO teams (team_name, users_id,championat_id, team_describtion, captain) values(%s,%s, %s, %s, %s)', (team_name, captain_id, championat_id, team_discribtion, captain_id))
+#             connection.commit()
+#             mycursor.execute("Select id from teams where team_name = %s",(team_name,))
+#             team_id = mycursor.fetchone()
+#             team_elem = team_id[0]
+#             mycursor.execute('SELECT teams_id FROM championats where id = %s', (championat_id,))
+#             teams_id = mycursor.fetchone()
+#             teams = list(teams_id)
+#             teams1 = teams[0] + ',' + str(team_elem)
+#             tuple(teams1)
+#             mycursor.execute('UPDATE championats SET teams_id = %s WHERE id = %s', (teams1, championat_id))
+#             response = make_response('teams1', 200)
+#             response.headers['Access-Control-Allow-Origin'] = '*'
+#             return response
+#     else:
+#         response = make_response("team name is busy", 200)
+#         response.headers['Access-Control-Allow-Origin'] = '*'
+#         return response
+
 
 @app.route('/addUserToTeam', methods=['POST'])
 def addUserToTeam():
     userId = request.form['userId']
-    # championatId = request.form['championatId']
     teamname = request.form['teamname']
-    mycursor.execute('SELECT users_id FROM teams WHERE team_name=%s', (teamname,))
-    usersId = mycursor.fetchone()
-    users_id = list(usersId)
-    users_id.append(userId)
-    users_str = ','.join(users_id)
-    mycursor.execute('UPDATE teams SET users_id = %s WHERE team_name = %s', (users_str, teamname))
-    connection.commit()
-    mycursor.execute('DELETE FROM invitation WHERE nameuser = %s', (userId,))
-    users1_id = {'all': users_str}
-    response = make_response(users_str, 200)
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    return response
+
+    mycursor.execute('SELECT users_id FROM teams WHERE team_name = %s', (teamname,))
+    raw_usersid = mycursor.fetchone()
+    usersid = raw_usersid[0].split(',')
+
+    if userId not in usersid:
+        mycursor.execute('SELECT users_id FROM teams WHERE team_name=%s', (teamname,))
+        usersId = mycursor.fetchone()
+        users_id = list(usersId)
+        users_id.append(userId)
+        users_str = ','.join(users_id)
+        mycursor.execute('UPDATE teams SET users_id = %s WHERE team_name = %s', (users_str, teamname))
+        connection.commit()
+        mycursor.execute('DELETE FROM invitation WHERE nameuser = %s', (userId,))
+        users1_id = {'all': users_str}
+        response = make_response('Вы вступили в команду', 200)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+    else:
+        response = make_response('Вы уже состоите в данной команде', 200)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
 
 @app.route('/noAddToTeam', methods=['POST'])
 def noAddToTeam():
