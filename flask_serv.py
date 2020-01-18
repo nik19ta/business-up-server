@@ -80,16 +80,9 @@ def exitFromChampionat():
     championat_id = request.form['championat_id']
     user_id = request.form['user_id']
     team_id = request.form['teamid']
-    print('exitFromChampionat')
-    print(user_id)
-    print(championat_id)
-    print(team_id)
-
     mycursor.execute('SELECT captain FROM teams WHERE id = %s', (team_id,))
     captain = mycursor.fetchone()
-    captain_id = int(captain[0])
-    print(captain_id)
-    print(captain_id)
+    captain_id = captain[0]
     if user_id == captain_id:
         print(team_id)
         mycursor.execute('DELETE FROM teams WHERE id = %s', (team_id,))
@@ -97,7 +90,7 @@ def exitFromChampionat():
 
         mycursor.execute('SELECT teams_id FROM championats WHERE id = %s', (championat_id,))
         raw_teams_id = mycursor.fetchone()
-        teams_id = raw_teams_id[0].splсit(',')
+        teams_id = raw_teams_id[0].split(',')
         teams_id.remove(team_id)
         teams_ids = ','.join(teams_id)
         mycursor.execute('UPDATE championats SET teams_id = %s WHERE id = %s', (teams_ids, championat_id))
