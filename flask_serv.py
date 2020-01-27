@@ -55,26 +55,6 @@ def testteam():
     return response
 
 
-# @app.route('/deluserfromchampionat', methods=['POST'])
-# def deluserfromchampionat():
-#     user_id = request.form['userid']
-#     championat_id = request.form['championatid']
-#     print(user_id)
-#     #
-#     mycursor.execute('SELECT users_id FROM championats WHERE id = %s', (championat_id,))
-#     raw_users_id = mycursor.fetchone()
-#     users_id = raw_users_id[0].split(',')
-#     print(users_id)
-#     users_id.remove(user_id)
-#     print(68)
-#     ids = ','.join(users_id)
-#
-#     mycursor.execute('UPDATE championats SET users_id = %s WHERE id = %s', (ids, championat_id))
-#     connection.commit()
-#
-#     response = make_response('ok',200)
-#     response.headers['Access-Control-Allow-Origin'] = '*'
-#     return response
 @app.route('/exitFromChampionat', methods=['POST'])
 def exitFromChampionat():
     championat_id = request.form['championat_id']
@@ -246,6 +226,18 @@ def invate():
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
+@app.route('/addacc', methods=['POST'])
+def addacc():
+    accid = request.form['accid']
+    id = request.form['id']
+    login = request.form['login']
+    password = request.form['password']
+    mycursor.execute("UPDATE users SET account = %s WHERE ID = %s and LOGIN = %s and password = %s",(accid, id, login, password ))
+    connection.commit()
+    response = make_response(f'id аккаунта виртомоники изменён на {accid}', 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
 @app.route('/invatetoadd', methods=['POST'])
 def invatetoadd():
     nameuser = request.form['nameuser']
@@ -277,7 +269,6 @@ def invatetoadd():
             response.headers['Access-Control-Allow-Origin'] = '*'
             return response
 
-
 @app.route('/AddToTeam', methods= ['POST'])
 def AddToTeam():
     team_name = request.form['team_name']
@@ -285,12 +276,6 @@ def AddToTeam():
     team_discribtion = request.form['team_discribtion']
     championat_id = request.form['championat_id']
     captain_id = request.form['captain_id']
-    # print(team_name)
-    # print(team_nomination)
-    # print(team_discribtion)
-    # print(championat_id)
-    # print(captain_id)
-
     # данные для проверки названия команды
     mycursor.execute("SELECT team_name FROM teams WHERE team_name = %s", (team_name,))
     # mycursor.execute(f'SELECT team_name FROM teams WHERE team_name = {team_name}')
@@ -456,7 +441,8 @@ def login():
 		'date_of_birth':account[5],
 		'gender':account[6],
 		'city':account[7],
-		'img':account[8]
+		'img':account[8],
+		'account':account[9],
         }
         status = {'info':databaseinfo, 'status': 'ok'}
     response = make_response(status, 200)
