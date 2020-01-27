@@ -4,14 +4,15 @@ To start
 
 install flask
 ```
-## pip install flask
+pip3 install flask
 ```
+
 install mysql-connector-python
  ```
-## pip install mysql-connector-python
+pip3 install mysql-connector-python
 ```
 
 and
 ```
-## Python flask_serv.py
+Python3 flask_serv.py
 ```
