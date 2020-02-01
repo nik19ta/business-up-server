@@ -11,10 +11,31 @@ mycursor = connection.cursor(buffered=True)
 
 app = Flask(__name__)
 
+@app.route('/arthur', methods=['GET'])
+def arthur():
+    ok = {'all': all}
+    response = make_response({'id': 'Arthur','login': 'Khorshikyan','sity': 'Moscow' }, 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+@app.route('/anton', methods=['GET'])
+def antom():
+    ok = {'all': all}
+    response = make_response({'id': 'Anthony','login': 'Morato','sity': 'Moscow' }, 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+@app.route('/data', methods=['GET'])
+def data():
+    ok = {'all': all}
+    response = make_response({'id': '1','login': 'test data','sity': 'moskows' }, 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
 @app.route('/usersinteam', methods=['POST'])
 def usersinteam():
     raw_data = request.form['users_id']
+    print(raw_data)
     ids = raw_data.split(',')
     all=[]
     for id in ids:
@@ -60,51 +81,64 @@ def exitFromChampionat():
     championat_id = request.form['championat_id']
     user_id = request.form['user_id']
     team_id = request.form['teamid']
-    mycursor.execute('SELECT captain FROM teams WHERE id = %s', (team_id,))
-    captain = mycursor.fetchone()
-    captain_id = captain[0]
-    if user_id == captain_id:
-        print(team_id)
-        mycursor.execute('DELETE FROM teams WHERE id = %s', (team_id,))
-        connection.commit()
+    print(championat_id, user_id, team_id)
+    if team_id != 'false':
+        mycursor.execute('SELECT captain FROM teams WHERE id = %s', (team_id,))
+        captain = mycursor.fetchone()
+        captain_id = captain[0]
+        if user_id == captain_id:
+            print(team_id)
+            mycursor.execute('DELETE FROM teams WHERE id = %s', (team_id,))
+            connection.commit()
 
-        mycursor.execute('SELECT teams_id FROM championats WHERE id = %s', (championat_id,))
-        raw_teams_id = mycursor.fetchone()
-        teams_id = raw_teams_id[0].split(',')
-        teams_id.remove(team_id)
-        teams_ids = ','.join(teams_id)
-        mycursor.execute('UPDATE championats SET teams_id = %s WHERE id = %s', (teams_ids, championat_id))
-
-
-        mycursor.execute('SELECT users_id FROM championats WHERE id = %s', (championat_id,))
-        raw_users_ids = mycursor.fetchone()
-        users_ids = raw_users_ids[0].split(',')
-        users_ids.remove(user_id)
-        users_id = ','.join(users_ids)
-        mycursor.execute('UPDATE championats SET users_id = %s WHERE id = %s', (users_id, championat_id))
+            mycursor.execute('SELECT teams_id FROM championats WHERE id = %s', (championat_id,))
+            raw_teams_id = mycursor.fetchone()
+            teams_id = raw_teams_id[0].split(',')
+            teams_id.remove(team_id)
+            teams_ids = ','.join(teams_id)
+            mycursor.execute('UPDATE championats SET teams_id = %s WHERE id = %s', (teams_ids, championat_id))
 
 
-        response = make_response('участник был капитаном, поэтому и команда удалена!', 200)
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        return response
+            mycursor.execute('SELECT users_id FROM championats WHERE id = %s', (championat_id,))
+            raw_users_ids = mycursor.fetchone()
+            users_ids = raw_users_ids[0].split(',')
+            users_ids.remove(user_id)
+            users_id = ','.join(users_ids)
+            mycursor.execute('UPDATE championats SET users_id = %s WHERE id = %s', (users_id, championat_id))
+
+
+            response = make_response('участник был капитаном, поэтому и команда удалена!', 200)
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
+        else:
+            mycursor.execute('SELECT users_id FROM teams WHERE id = %s', (team_id,))
+            raw_users_ids = mycursor.fetchone()
+            users_ids = raw_users_ids[0].split(',')
+            users_ids.remove(user_id)
+            users_id = ','.join(users_ids)
+            mycursor.execute('UPDATE teams SET users_id = %s WHERE id = %s', (users_id, team_id))
+
+            mycursor.execute('SELECT users_id FROM championats WHERE id = %s', (championat_id,))
+            rawUsersIds = mycursor.fetchone()
+            usersIds = rawUsersIds[0].split(',')
+            usersIds.remove(user_id)
+            usersId = ','.join(usersIds)
+            mycursor.execute('UPDATE championats SET users_id = %s WHERE id = %s', (usersId, championat_id))
+
+            response = make_response('Пользователь удален из чемпионата и команды!', 200)
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
     else:
-        mycursor.execute('SELECT users_id FROM teams WHERE id = %s', (team_id,))
-        raw_users_ids = mycursor.fetchone()
-        users_ids = raw_users_ids[0].split(',')
-        users_ids.remove(user_id)
-        users_id = ','.join(users_ids)
-        mycursor.execute('UPDATE teams SET users_id = %s WHERE id = %s', (users_id, team_id))
+            mycursor.execute('SELECT users_id FROM championats WHERE id = %s', (championat_id,))
+            rawUsersIds = mycursor.fetchone()
+            usersIds = rawUsersIds[0].split(',')
+            usersIds.remove(user_id)
+            usersId = ','.join(usersIds)
+            mycursor.execute('UPDATE championats SET users_id = %s WHERE id = %s', (usersId, championat_id))
 
-        mycursor.execute('SELECT users_id FROM championats WHERE id = %s', (championat_id,))
-        rawUsersIds = mycursor.fetchone()
-        usersIds = rawUsersIds[0].split(',')
-        usersIds.remove(user_id)
-        usersId = ','.join(usersIds)
-        mycursor.execute('UPDATE championats SET users_id = %s WHERE id = %s', (usersId, championat_id))
-
-        response = make_response('Пользователь удален из чемпионата и команды!', 200)
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        return response
+            response = make_response('Пользователь удален из чемпионата!', 200)
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
 
 
 @app.route('/allusers',methods= ['POST'])
