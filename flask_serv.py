@@ -483,6 +483,7 @@ def login():
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
+
 @app.route('/reg', methods=['POST'])
 def register():
     login = request.form['login']
