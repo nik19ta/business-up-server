@@ -91,12 +91,12 @@ def exitFromChampionat():
             mycursor.execute('DELETE FROM teams WHERE id = %s', (team_id,))
             connection.commit()
 
-            mycursor.execute('SELECT teams_id FROM championats WHERE id = %s', (championat_id,))
-            raw_teams_id = mycursor.fetchone()
-            teams_id = raw_teams_id[0].split(',')
-            teams_id.remove(team_id)
-            teams_ids = ','.join(teams_id)
-            mycursor.execute('UPDATE championats SET teams_id = %s WHERE id = %s', (teams_ids, championat_id))
+            # mycursor.execute('SELECT teams_id FROM championats WHERE id = %s', (championat_id,))
+            # raw_teams_id = mycursor.fetchone()
+            # teams_id = raw_teams_id[0].split(',')
+            # teams_id.remove(team_id)
+            # teams_ids = ','.join(teams_id)
+            # mycursor.execute('UPDATE championats SET teams_id = %s WHERE id = %s', (teams_ids, championat_id))
 
 
             mycursor.execute('SELECT users_id FROM championats WHERE id = %s', (championat_id,))
@@ -105,6 +105,8 @@ def exitFromChampionat():
             users_ids.remove(user_id)
             users_id = ','.join(users_ids)
             mycursor.execute('UPDATE championats SET users_id = %s WHERE id = %s', (users_id, championat_id))
+
+
 
 
             response = make_response('участник был капитаном, поэтому и команда удалена!', 200)
@@ -333,12 +335,12 @@ def AddToTeam():
                 mycursor.execute("SELECT id from teams where team_name = %s",(team_name,))
                 team_id = mycursor.fetchone()
                 team_elem = team_id[0]
-                mycursor.execute('SELECT teams_id FROM championats where id = %s', (championat_id,))
-                teams_id = mycursor.fetchone()
-                teams = list(teams_id)
-                teams1 = teams[0] + ',' + str(team_elem)
-                tuple(teams1)
-                mycursor.execute('UPDATE championats SET teams_id = %s WHERE id = %s', (teams1, championat_id))
+                # mycursor.execute('SELECT teams_id FROM championats where id = %s', (championat_id,))
+                # teams_id = mycursor.fetchone()
+                # teams = list(teams_id)
+                # teams1 = teams[0] + ',' + str(team_elem)
+                # tuple(teams1)
+                # mycursor.execute('UPDATE championats SET teams_id = %s WHERE id = %s', (teams1, championat_id))
                 response = make_response('Команда создана!', 200)
                 response.headers['Access-Control-Allow-Origin'] = '*'
                 return response
@@ -350,49 +352,6 @@ def AddToTeam():
         response = make_response('Копитанам команд нельзя создавать команды', 200)
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
-
-# @app.route('/AddToTeam', methods= ['POST'])
-# def AddToTeam():
-#     team_name = request.form['team_name']
-#     team_nomination = request.form['team_nomination']
-#     team_discribtion = request.form['team_discribtion']
-#     championat_id = request.form['championat_id']
-#     captain_id = request.form['captain_id']
-#     print(team_name)
-#
-#      # данные для проверки названия команды
-#     mycursor.execute("SELECT team_name FROM teams WHERE team_name = %s", (team_name,))
-#     # mycursor.execute(f'SELECT team_name FROM teams WHERE team_name = {team_name}')
-#     acc = mycursor.fetchone()
-#     print(acc)
-#
-#     mycursor.execute("SELECT team_name FROM teams WHERE team_name = %s", (team_name,))
-#     acc = mycursor.fetchone()
-#     print(acc)
-#     if acc == None:
-#         if team_name == '' or team_nomination == '' or team_discribtion == '' or championat_id == '' or captain_id ==   '':
-#             response = make_response('nuul inp', 200)
-#             response.headers['Access-Control-Allow-Origin'] = '*'
-#             return response
-#         else:
-#             mycursor.execute('INSERT INTO teams (team_name, users_id,championat_id, team_describtion, captain) values(%s,%s, %s, %s, %s)', (team_name, captain_id, championat_id, team_discribtion, captain_id))
-#             connection.commit()
-#             mycursor.execute("Select id from teams where team_name = %s",(team_name,))
-#             team_id = mycursor.fetchone()
-#             team_elem = team_id[0]
-#             mycursor.execute('SELECT teams_id FROM championats where id = %s', (championat_id,))
-#             teams_id = mycursor.fetchone()
-#             teams = list(teams_id)
-#             teams1 = teams[0] + ',' + str(team_elem)
-#             tuple(teams1)
-#             mycursor.execute('UPDATE championats SET teams_id = %s WHERE id = %s', (teams1, championat_id))
-#             response = make_response('teams1', 200)
-#             response.headers['Access-Control-Allow-Origin'] = '*'
-#             return response
-#     else:
-#         response = make_response("team name is busy", 200)
-#         response.headers['Access-Control-Allow-Origin'] = '*'
-#         return response
 
 
 @app.route('/addUserToTeam', methods=['POST'])
@@ -483,7 +442,6 @@ def login():
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
-
 @app.route('/reg', methods=['POST'])
 def register():
     login = request.form['login']
@@ -501,6 +459,63 @@ def register():
         response = make_response('login isssss', 200)
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
+
+
+
+##########################################
+#                                        #
+#                 Chat                   #
+#                                        #
+##########################################
+
+# +----+------------+--------+-----------+--------------+---------------------+
+# | id | message_id | sender | recipient | message      | data                |
+# +----+------------+--------+-----------+--------------+---------------------+
+
+@app.route('/getusers',methods= ['POST'])
+def getusers():
+    sender = request.form['sender']
+    print(sender)
+    mycursor.execute(f'SELECT recipient FROM chat WHERE sender = {sender}')
+    chat = mycursor.fetchall()
+    chatsers = []
+
+    for i in set(chat):
+        mycursor.execute(f'SELECT fio,img FROM users WHERE id = {i[0]}')
+        chat = mycursor.fetchone()
+        chatsers.append(chat + i)
+
+    print(chatsers)
+
+    ChatUsersList = {'users': chatsers}
+
+    response = make_response(ChatUsersList, 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+
+@app.route('/getchat',methods= ['POST'])
+def getchat():
+    sender = request.form['sender']
+    recipient = request.form['recipient']
+    print(sender)
+    print(recipient)
+    mycursor.execute(f'SELECT message_id,message,id,sender,recipient FROM chat WHERE sender = {sender} and recipient = {recipient}')
+    datachat = mycursor.fetchall()
+    # if datachat == []:
+    #     mycursor.execute(f'SELECT message_id,message,id FROM chat WHERE sender = {recipient} and recipient = {sender}')
+    #     datachat = mycursor.fetchall()
+    print(datachat)
+
+    chat = {'chat': datachat}
+
+    response = make_response(chat, 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+
+
+
 
 
 if __name__ == "__main__":
