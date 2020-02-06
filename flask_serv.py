@@ -18,6 +18,19 @@ def arthur():
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
+@app.route('/Amir', methods=['GET'])
+def Amir():
+    ok = {'all': all}
+    response = make_response({'id': 'Amir','login': 'Omarov','sity': 'Moscow' }, 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+@app.route('/Dmitry', methods=['GET'])
+def Dmitry():
+    response = make_response({'id': 'Dmitry','login': 'Kuzmin','sity': 'Moscow','district': 'Yuzhnoye Tushino district' }, 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
 @app.route('/anton', methods=['GET'])
 def antom():
     ok = {'all': all}
@@ -32,8 +45,9 @@ def data():
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
-@app.route('/usersinteam', methods=['POST'])
-def usersinteam():
+
+@app.route('/users', methods=['POST'])
+def users():
     raw_data = request.form['users_id']
     print(raw_data)
     ids = raw_data.split(',')
@@ -42,6 +56,55 @@ def usersinteam():
         mycursor.execute(f'SELECT * FROM users WHERE id = {id}')
         acc = mycursor.fetchall()
         all.append(acc)
+    ok = {'all': all}
+
+    response = make_response(ok, 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+@app.route('/usersinchampionat', methods=['POST'])
+def usersinchampionat():
+    raw_data = request.form['users_id']
+    championat_id = request.form['championat_id']
+    ids = raw_data.split(',')
+
+
+    mycursor.execute(f'select users_id from teams where championat_id = {championat_id}')
+    accounts = mycursor.fetchall()
+
+    all=[]
+    counts=[]
+
+    for id in ids:
+        mycursor.execute(f'SELECT * FROM users WHERE id = {id}')
+        acc1 = mycursor.fetchall()
+
+
+        list = True
+        for i in accounts: # кортеж
+
+            for acc in i: # кортеж в кортеже
+
+                for acc2 in acc.split(','): # 2
+
+                    if id == acc2:
+                        list = False
+                        all.append({'data':acc1, 'team': False})
+                        print(id + ' ' + acc2)
+
+                    if list == False:
+                        print('break')
+                        break
+                if list == False:
+                    print('break')
+                    break
+            if list == False:
+                print('break')
+                break
+        if list == True:
+            print('nik')
+            all.append({'data':acc1, 'team': True})
+
     ok = {'all': all}
 
     response = make_response(ok, 200)
@@ -475,10 +538,14 @@ def register():
 @app.route('/getusers',methods= ['POST'])
 def getusers():
     sender = request.form['sender']
-    print(sender)
-    mycursor.execute(f'SELECT recipient FROM chat WHERE sender = {sender}')
+    # print(sender)
+    # print(sender)
+    # print(sender)
+    # print(sender)
+    mycursor.execute(f'SELECT if(sender = {sender},recipient,sender) as "RESULT" FROM chat WHERE (sender = {sender}) or (recipient = {sender})')
     chat = mycursor.fetchall()
     chatsers = []
+    print(chat)
 
     for i in set(chat):
         mycursor.execute(f'SELECT fio,img FROM users WHERE id = {i[0]}')
@@ -500,11 +567,8 @@ def getchat():
     recipient = request.form['recipient']
     print(sender)
     print(recipient)
-    mycursor.execute(f'SELECT message_id,message,id,sender,recipient FROM chat WHERE sender = {sender} and recipient = {recipient}')
+    mycursor.execute(f'SELECT message_id,message,id,sender,recipient FROM chat WHERE (sender = {sender} and recipient = {recipient}) or (sender = {recipient} and recipient = {sender})')
     datachat = mycursor.fetchall()
-    # if datachat == []:
-    #     mycursor.execute(f'SELECT message_id,message,id FROM chat WHERE sender = {recipient} and recipient = {sender}')
-    #     datachat = mycursor.fetchall()
     print(datachat)
 
     chat = {'chat': datachat}
@@ -513,6 +577,27 @@ def getchat():
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
+
+@app.route('/sendchat',methods= ['POST'])
+def sendchat():
+    sender = request.form['sender']
+    recipient = request.form['recipient']
+    message = request.form['message'];
+    print(sender)
+    print(recipient)
+    print(message)
+    mycursor.execute(f'insert into chat (sender, recipient, message) VALUES (%s, %s, %s)', (sender, recipient, message))
+    connection.commit()
+    mycursor.execute(f'SELECT message_id,message,id,sender,recipient FROM chat WHERE (sender = {sender} and recipient = {recipient}) or (sender = {recipient} and recipient = {sender})')
+
+    datachat = mycursor.fetchall()
+    print(datachat)
+
+    chat = {'chat': datachat}
+
+    response = make_response(chat, 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
 
 
