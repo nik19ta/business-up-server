@@ -10,17 +10,25 @@ connection = mysql.connector.connect(
 mycursor = connection.cursor(buffered=True)
 
 app = Flask(__name__)
+#
+#
+#
+#
+# Александр Яблонский
+@app.route('/Vasiliy', methods=['GET'])
+def Alexander():
+    response = make_response({'id': 'Vasiliy','login': 'Nichiporov','sity': 'Moscow' }, 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
 @app.route('/arthur', methods=['GET'])
 def arthur():
-    ok = {'all': all}
     response = make_response({'id': 'Arthur','login': 'Khorshikyan','sity': 'Moscow' }, 200)
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
 @app.route('/Amir', methods=['GET'])
 def Amir():
-    ok = {'all': all}
     response = make_response({'id': 'Amir','login': 'Omarov','sity': 'Moscow' }, 200)
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
@@ -33,18 +41,21 @@ def Dmitry():
 
 @app.route('/anton', methods=['GET'])
 def antom():
-    ok = {'all': all}
     response = make_response({'id': 'Anthony','login': 'Morato','sity': 'Moscow' }, 200)
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
 @app.route('/data', methods=['GET'])
 def data():
-    ok = {'all': all}
     response = make_response({'id': '1','login': 'test data','sity': 'moskows' }, 200)
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
+#
+#
+#
+#
+#
 
 @app.route('/users', methods=['POST'])
 def users():
@@ -598,6 +609,21 @@ def sendchat():
     response = make_response(chat, 200)
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
+
+
+@app.route('/search',methods= ['POST'])
+def search():
+    content = request.form['content']
+    print(content)
+    mycursor.execute(f'SELECT id FROM users WHERE login = {content}')
+    datachat = mycursor.fetchall()
+
+    chat = {'chat': datachat}
+
+    response = make_response(chat, 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
 
 
 
