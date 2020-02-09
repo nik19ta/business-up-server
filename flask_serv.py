@@ -83,6 +83,7 @@ def usersinchampionat():
     mycursor.execute(f'select users_id from teams where championat_id = {championat_id}')
     accounts = mycursor.fetchall()
 
+
     all=[]
     counts=[]
 
@@ -90,19 +91,18 @@ def usersinchampionat():
         mycursor.execute(f'SELECT * FROM users WHERE id = {id}')
         acc1 = mycursor.fetchall()
 
+        mycursor.execute(f'select nameuser,nameteam from invitation where nameuser = {id}')
+        inv = mycursor.fetchall()
+
 
         list = True
         for i in accounts: # кортеж
-
             for acc in i: # кортеж в кортеже
-
                 for acc2 in acc.split(','): # 2
-
                     if id == acc2:
                         list = False
-                        all.append({'data':acc1, 'team': False})
+                        all.append({'data':acc1, 'team': False, 'inv':inv})
                         print(id + ' ' + acc2)
-
                     if list == False:
                         print('break')
                         break
@@ -114,7 +114,8 @@ def usersinchampionat():
                 break
         if list == True:
             print('nik')
-            all.append({'data':acc1, 'team': True})
+            all.append({'data':acc1, 'team': True, 'inv':inv})
+
 
     ok = {'all': all}
 
