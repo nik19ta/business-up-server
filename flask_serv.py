@@ -52,11 +52,6 @@ def data():
     return response
 
 #
-#
-#
-#
-#
-
 @app.route('/users', methods=['POST'])
 def users():
     raw_data = request.form['users_id']
@@ -72,6 +67,7 @@ def users():
     response = make_response(ok, 200)
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
+
 
 @app.route('/usersinchampionat', methods=['POST'])
 def usersinchampionat():
@@ -594,7 +590,7 @@ def getchat():
 def sendchat():
     sender = request.form['sender']
     recipient = request.form['recipient']
-    message = request.form['message'];
+    message = request.form['message']
     print(sender)
     print(recipient)
     print(message)
@@ -615,19 +611,22 @@ def sendchat():
 @app.route('/search',methods= ['POST'])
 def search():
     content = request.form['content']
-    print(content)
-    mycursor.execute(f'SELECT id FROM users WHERE login = {content}')
+    mycursor.execute('SELECT id FROM users WHERE login = %s', (content,))
     datachat = mycursor.fetchall()
+    chat = []
+    # print(datachat[0])
+    for i in datachat[0]:
+        mycursor.execute('SELECT login,img,id FROM users WHERE id = %s', (i,))
+        datachats = mycursor.fetchone()
+        print(datachats)
+        chat.append(datachats)
 
-    chat = {'chat': datachat}
 
-    response = make_response(chat, 200)
+    chats = {'chat': chat}
+
+    response = make_response(chats, 200)
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
-
-
-
-
 
 
 if __name__ == "__main__":
