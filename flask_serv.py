@@ -10,48 +10,7 @@ connection = mysql.connector.connect(
 mycursor = connection.cursor(buffered=True)
 
 app = Flask(__name__)
-#
-#
-#
-#
-# Александр Яблонский
-@app.route('/Vasiliy', methods=['GET'])
-def Alexander():
-    response = make_response({'id': 'Vasiliy','login': 'Nichiporov','sity': 'Moscow' }, 200)
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    return response
 
-@app.route('/arthur', methods=['GET'])
-def arthur():
-    response = make_response({'id': 'Arthur','login': 'Khorshikyan','sity': 'Moscow' }, 200)
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    return response
-
-@app.route('/Amir', methods=['GET'])
-def Amir():
-    response = make_response({'id': 'Amir','login': 'Omarov','sity': 'Moscow' }, 200)
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    return response
-
-@app.route('/Dmitry', methods=['GET'])
-def Dmitry():
-    response = make_response({'id': 'Dmitry','login': 'Kuzmin','sity': 'Moscow','district': 'Yuzhnoye Tushino district' }, 200)
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    return response
-
-@app.route('/anton', methods=['GET'])
-def antom():
-    response = make_response({'id': 'Anthony','login': 'Morato','sity': 'Moscow' }, 200)
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    return response
-
-@app.route('/data', methods=['GET'])
-def data():
-    response = make_response({'id': '1','login': 'test data','sity': 'moskows' }, 200)
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    return response
-
-#
 @app.route('/users', methods=['POST'])
 def users():
     raw_data = request.form['users_id']
