@@ -1,5 +1,14 @@
 from flask import Flask, render_template, request, redirect, url_for, make_response
 import mysql.connector
+import random
+import smtplib
+import os
+import binascii
+
+# Настройка модуля для отправки писем на почту
+smtpObj = smtplib.SMTP('smtp.mail.ru', 587)
+smtpObj.starttls()
+smtpObj.login('bisupstartup@mail.ru','startuppassword')
 
 connection = mysql.connector.connect(
         host = 'localhost',
@@ -10,7 +19,10 @@ connection = mysql.connector.connect(
 mycursor = connection.cursor(buffered=True)
 
 app = Flask(__name__)
-
+#
+#
+#
+#
 @app.route('/users', methods=['POST'])
 def users():
     raw_data = request.form['users_id']
@@ -135,11 +147,11 @@ def exitFromChampionat():
             users_ids.remove(user_id)
             users_id = ','.join(users_ids)
             mycursor.execute('UPDATE championats SET users_id = %s WHERE id = %s', (users_id, championat_id))
+            connection.commit()
 
 
 
-
-            response = make_response('участник был капитаном, поэтому и команда удалена!', 200)
+            response = make_response({ 'status' : 'участник был капитаном, поэтому и команда удалена!'}, 200)
             response.headers['Access-Control-Allow-Origin'] = '*'
             return response
         else:
@@ -149,6 +161,7 @@ def exitFromChampionat():
             users_ids.remove(user_id)
             users_id = ','.join(users_ids)
             mycursor.execute('UPDATE teams SET users_id = %s WHERE id = %s', (users_id, team_id))
+            connection.commit()
 
             mycursor.execute('SELECT users_id FROM championats WHERE id = %s', (championat_id,))
             rawUsersIds = mycursor.fetchone()
@@ -156,8 +169,9 @@ def exitFromChampionat():
             usersIds.remove(user_id)
             usersId = ','.join(usersIds)
             mycursor.execute('UPDATE championats SET users_id = %s WHERE id = %s', (usersId, championat_id))
+            connection.commit()
 
-            response = make_response('Пользователь удален из чемпионата и команды!', 200)
+            response = make_response({ 'status' : 'Пользователь удален из чемпионата и команды!'}, 200)
             response.headers['Access-Control-Allow-Origin'] = '*'
             return response
     else:
@@ -167,8 +181,9 @@ def exitFromChampionat():
             usersIds.remove(user_id)
             usersId = ','.join(usersIds)
             mycursor.execute('UPDATE championats SET users_id = %s WHERE id = %s', (usersId, championat_id))
+            connection.commit()
 
-            response = make_response('Пользователь удален из чемпионата!', 200)
+            response = make_response({ 'status' : 'Пользователь удален из чемпионата!'}, 200)
             response.headers['Access-Control-Allow-Origin'] = '*'
             return response
 
@@ -226,6 +241,7 @@ def chmore():
     passw2 = request.form['passw2']
     id = request.form['id']
     mycursor.execute("UPDATE users SET password = %s WHERE id = %s and password = %s",(passw2,id,passw))
+    connection.commit()
     response = make_response('otl', 200)
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
@@ -239,10 +255,12 @@ def chmore1():
     fio = request.form['fio']
     dataof = request.form['dataof']
     city = request.form['city']
+    gender = request.form['gender']
     mycursor.execute("UPDATE users SET FIO = %s WHERE id = %s and login = %s",(fio, id, login ))
     mycursor.execute("UPDATE users SET city = %s WHERE id = %s and login = %s",(city, id, login ))
     mycursor.execute("UPDATE users SET date_of_birth = %s WHERE id = %s and login = %s",(dataof, id, login ))
-    # connection.commit()
+    mycursor.execute("UPDATE users SET gender = %s WHERE id = %s and login = %s",(gender, id, login ))
+    connection.commit()
     response = make_response('accounts', 200)
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
@@ -371,15 +389,15 @@ def AddToTeam():
                 # teams1 = teams[0] + ',' + str(team_elem)
                 # tuple(teams1)
                 # mycursor.execute('UPDATE championats SET teams_id = %s WHERE id = %s', (teams1, championat_id))
-                response = make_response('Команда создана!', 200)
+                response = make_response({'status':'Команда создана!'}, 200)
                 response.headers['Access-Control-Allow-Origin'] = '*'
                 return response
         else:
-            response = make_response("Имя команды занято", 200)
+            response = make_response({'status': "Имя команды занято"}, 200)
             response.headers['Access-Control-Allow-Origin'] = '*'
             return response
     else:
-        response = make_response('Копитанам команд нельзя создавать команды', 200)
+        response = make_response({'status':'Копитанам команд нельзя создавать команды'}, 200)
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
 
@@ -455,6 +473,10 @@ def login():
             print('error password')
     acc()
     if account:
+        cookie = binascii.hexlify(os.urandom(16))
+        mycursor.execute('UPDATE users SET cookie = %s WHERE login = %s', (cookie, login))
+        connection.commit()
+
         databaseinfo = {
 		'id':account[0],
 		'login':account[1],
@@ -468,7 +490,57 @@ def login():
 		'account':account[9],
         }
         status = {'info':databaseinfo, 'status': 'ok'}
+
+        response = make_response(status, 200)
+        response.set_cookie('user', cookie, max_age=60*60*24*365*2)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+
     response = make_response(status, 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+@app.route('/auto_login', methods=['POST'])
+def auto_login():
+    cookie = request.cookies.get('user')
+
+    mycursor.execute('SELECT login FROM users WHERE cookie = %s', (cookie,))
+    acc = mycursor.fetchone()
+
+    if acc:
+        mycursor.execute('SELECT * FROM users WHERE login = %s', (acc[0],))
+        account = mycursor.fetchone()
+    else:
+        response = make_response('Error', 200)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+
+    databaseinfo = {
+	    'id':account[0],
+		'login':account[1],
+		'email': account[2],
+		'password':account[3],
+		'fio':account[4],
+		'date_of_birth':account[5],
+		'gender':account[6],
+		'city':account[7],
+		'img':account[8],
+		'account':account[9],
+    }
+    status = {'info':databaseinfo, 'status': 'ok'}
+
+    response = make_response(status, 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+@app.route('/logintest',methods= ['POST'])
+def logintest():
+    # login = request.form['login']
+    # password = request.form['password']
+    # print(password)
+    print('password')
+
+    response = make_response('status', 200)
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
@@ -482,11 +554,11 @@ def register():
     if not acc:
         mycursor.execute('INSERT INTO users (login, email, password) VALUES (%s, %s, %s)', (login, email, password))
         connection.commit()
-        response = make_response('ok', 200)
+        response = make_response({"status":'ok'}, 200)
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     else:
-        response = make_response('login isssss', 200)
+        response = make_response({"status":'login isssss'}, 200)
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
 
@@ -587,6 +659,72 @@ def search():
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
+@app.route('/reset_password', methods=['POST'])
+def reset_password():
+    username = request.form['username']
+
+    mycursor.execute('SELECT email FROM users WHERE login = %s', (username,))
+    account = mycursor.fetchone()
+
+    if account:
+
+        chars = '/*!&$#?=@abcdefghijklnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
+        length = 5
+        password =''
+        for _ in range(length):
+            password += random.choice(chars)
+        print(password)
+
+        mycursor.execute('INSERT INTO reset_password VALUES (%s, %s)', (username, password))
+        connection.commit()
+
+        smtpObj.sendmail('bisupstartup@mail.ru', account, f'Привет, это команда BisUp. Ты запросил код на восстановление пароля в нашем сервисе. Вот код: {password} \n Вставьте его в поле для кода \n Если вы ничего не запрашивали, то напишите нам в поддержку!')
+
+        response = make_response('ok', 200)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+    else:
+
+        response = make_response('Аккаунта с таким именем не существует', 200)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+
+@app.route('/check_code_from_email', methods=['POST'])
+def check_code_from_email():
+    username = request.form['username']
+    users_code = request.form['code']
+
+    mycursor.execute('SELECT email_code FROM reset_password WHERE username = %s', (username,))
+    code = mycursor.fetchone()
+
+    if code:
+        if users_code == code:
+            mycursor.execute('DELETE FROM reset_password WHERE username = %s', (username,))
+            connection.commit()
+
+            response = make_response('Проверка прошла отлично! Меняй пароль', 200)
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
+        else:
+            response = make_response('Неверный код ;(', 200)
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
+    else:
+        response = make_response('Сначала нужно отправить запрос на восстановление пароля', 200)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+
+@app.route('/reset_password_access', methods=['POST'])
+def reset_password_access():
+    username = request.form['username']
+    new_password = request.form['new_password']
+
+    mycursor.execute('UPDATE users SET password = %s WHERE login = %s', (new_password, username))
+    connection.commit()
+
+    response = make_response('Все ок!', 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
 if __name__ == "__main__":
 	app.run(debug=True, host='0.0.0.0')
