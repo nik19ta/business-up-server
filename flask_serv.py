@@ -463,6 +463,8 @@ def testin():
 def login():
     login = request.form['login']
     password = request.form['password']
+
+
     mycursor.execute('SELECT * FROM users WHERE Login = %s AND Password = %s', (login, password))
     account = mycursor.fetchone()
     status = 'error'
@@ -493,6 +495,49 @@ def login():
 
         response = make_response(status, 200)
         response.set_cookie('user', cookie, max_age=60*60*24*365*2)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+
+    response = make_response(status, 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+
+@app.route('/login_no_cookie',methods= ['POST'])
+def login_no_cookie():
+    login = request.form['login']
+    password = request.form['password']
+
+
+    mycursor.execute('SELECT * FROM users WHERE Login = %s AND Password = %s', (login, password))
+    account = mycursor.fetchone()
+    status = 'error'
+    def acc():
+        if account:
+            print('ok')
+        else:
+            print('error password')
+    acc()
+    if account:
+        cookie = binascii.hexlify(os.urandom(16))
+        mycursor.execute('UPDATE users SET cookie = %s WHERE login = %s', (cookie, login))
+        connection.commit()
+
+        databaseinfo = {
+		'id':account[0],
+		'login':account[1],
+		'email': account[2],
+		'password':account[3],
+		'fio':account[4],
+		'date_of_birth':account[5],
+		'gender':account[6],
+		'city':account[7],
+		'img':account[8],
+		'account':account[9],
+        }
+        status = {'info':databaseinfo, 'status': 'ok'}
+
+        response = make_response(status, 200)
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
 
@@ -665,10 +710,11 @@ def reset_password():
 
     mycursor.execute('SELECT email FROM users WHERE login = %s', (username,))
     account = mycursor.fetchone()
+    print(account)
 
     if account:
 
-        chars = '/*!&$#?=@abcdefghijklnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
+        chars = 'abcdefghijklnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
         length = 5
         password =''
         for _ in range(length):
@@ -680,12 +726,12 @@ def reset_password():
 
         smtpObj.sendmail('bisupstartup@mail.ru', account, f'Привет, это команда BisUp. Ты запросил код на восстановление пароля в нашем сервисе. Вот код: {password} \n Вставьте его в поле для кода \n Если вы ничего не запрашивали, то напишите нам в поддержку!')
 
-        response = make_response('ok', 200)
+        response = make_response({'status':'ok'}, 200)
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     else:
 
-        response = make_response('Аккаунта с таким именем не существует', 200)
+        response = make_response({'status':'Аккаунта с таким именем не существует'}, 200)
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
 
@@ -723,6 +769,13 @@ def reset_password_access():
     connection.commit()
 
     response = make_response('Все ок!', 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+@app.route('/delete_cookie', methods=['POST'])
+def delete_cookie():
+    response = make_response('Все ок!', 200)
+    response.set_cookie('user', 'Куки удалены!', max_age=0)
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
