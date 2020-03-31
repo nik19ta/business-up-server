@@ -50,7 +50,7 @@ CREATE TABLE `chat` (
   `message` varchar(255) NOT NULL,
   `data` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=236 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=274 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -67,7 +67,20 @@ CREATE TABLE `invitation` (
   `nomination` varchar(45) DEFAULT NULL,
   `coverletter` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=85 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=106 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `reset_password`
+--
+
+DROP TABLE IF EXISTS `reset_password`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `reset_password` (
+  `username` text,
+  `email_code` text
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -86,7 +99,7 @@ CREATE TABLE `teams` (
   `championat_id` varchar(45) DEFAULT NULL,
   `captain` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`id`,`team_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=120 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=168 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -107,8 +120,9 @@ CREATE TABLE `users` (
   `city` varchar(45) DEFAULT 'Не указанно',
   `img` varchar(255) DEFAULT 'https://www.inoreader.com/cdn/profile_social_picture/1006096306/gravatar_1000/a4c4d10d3e4f072e7741f81ae9e05715bfd4465a905aa3dbe3ff537542f3bec5cc407cb2fb52737d795c6f3b63d6eab1201daa6aae02ae9292c38d578d88e115ff31a8cb0da1a16863e5558828ef4bbc644daa',
   `account` varchar(45) DEFAULT NULL,
+  `cookie` text,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -120,4 +134,4 @@ CREATE TABLE `users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-02-07 23:16:41
+-- Dump completed on 2020-03-31 13:09:05
