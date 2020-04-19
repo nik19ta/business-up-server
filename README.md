@@ -1,31 +1,96 @@
-# Server for bisup
+# Сервер business-up
+
+Для коректной работы нужно:
+  1) Усановить питон (Версия не ниже третий) 
+  2) Установить все нужные пакеты для коректной работы 
+  3) Установить mysql (Версия не ниже 5.7)
+  4) Настроить mysql 
+  5) Склонировать с гита проект
+  5) Импортировать  [структуру базы данных ](https://github.com/nik19ta/business-up-server/blob/master/bisup.sql)
+  6)  Запустить сервер 
 
 
-> for the server to work, you need to import
-> the database from the bisup file.sql
+> Все нижеприведенные примеры будут показываться на ubuntu os версии 18.04
 
+### Установка питон 
+Установить питон не так сложно, прописываем в консоль:
+```
+ sudo apt install python3
+```
+- Для использование sudo нужен пароль root, введите его чтобы не было ошибки - Затем в консоле нужно будет ввести Y что бы установить питон
 
-### To start:
-
-#### install flask:
-
-
+### Установка всех нужных пакетов для коректной работы сервера
+Для питона нужно установить всего два пакета:
+- Flask
 ```
 pip3 install flask
 ```
-
-#### install mysql-connector-python:
-
+- mysql-connector
 ```
 pip3 install mysql-connector-python
 ```
-### start the server:
+Если у вас не установленн Pip3 то выполните команду:
 ```
-Python3 flask_serv.py
+sudo apt install python3-pip
 ```
 
-> The server is running on port 5000, in order for it to work on port 80,
-> you need to install and configure nginx
 
+### Установка и настройка mysql (Версия не ниже 5.7)
+Теперь нужно поставить mysql:
+```
+sudo apt install mysql-server
+```
+И запускаем эту команду
+```
+sudo mysql_secure_installation
+```
+- Вводим пароль рута
+- Вводим пароль бд (Если вы при установки не указывали его то по умалчанию это toor)
+- Далее нас спрашивают поменять ли пароль (Y/n) если пароль менять не нужно то жмём n если нужно то y
+- Далее спрашивают удалить ли анонимных пользователя (Н/n) если нужно жмём y
+- Далее будет написанно: Disallow root login remotely? [Y/n] жмём y
+- Далее нас спросят удалить тестовую бд test жмём Y так как она нам не нужна 
+- Далее будет  Reloading the privilege tables will ensure that all changes made so far
+will take effect immediately. [Y/n] Жмём Y
 
-
+ далее в терминал вводим команду 
+ ```
+ sudo vim /etc/mysql/my.cnf
+ ```
+ > Если вы не умеете работать в vim то используйте nano что бы как минимум не иметь проблем с выходом из редактора 
+ 
+ меняем (если нет то прописываем) значения wait_timeout (количество секунд, в течение которых сервер ждет активности в неинтерактивном соединении, прежде чем закрыть его.)
+ ```sh
+ wait_timeout = 28800;
+ ```
+ 
+ > По умолчанию значения wait_timeout и interactive_timeout равняются 28800 секунд = 8 часов.
+ > Минимально можно установить 1, максимум — 31536000, максимум (для Windows) — 2147483.
+ 
+ Сохроняем и перезагружаем сервер mysql 
+ ```sh
+ sudo service mysql restart
+ ```
+ Или
+```sh
+/etc/init.d/mysql restart
+```
+### Клонируем проект с гита
+```sh
+git clone https://github.com/nik19ta/business-up-server.git
+```
+Теперь у нас появилась папка business-up-server в данном каталоге 
+Проверить это можно командой 
+```sh
+ls
+```
+### Импортируем структуру базы данных
+- перейдите в папку business-up-server которую склонировали в предыдущем шаге 
+- business-up-server
+- Экспортируем структуру бд из файла bisup.sql
+### Запускаем сервер 
+Переходим в каталог папки которую склонировали с гита 
+Пишем в консоле 
+```
+python3 flask_serv.py
+```
